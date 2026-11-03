@@ -23,6 +23,28 @@ public class Hook implements IXposedHookLoadPackage {
     public void handleLoadPackage(XC_LoadPackage.LoadPackageParam param) {
         if (!"com.android.launcher3".equals(param.packageName)) return;
 
+                final int blur = 60;
+        Class<?> depth = XposedHelpers.findClassIfExists(
+                "com.android.launcher3.statehandlers.DepthController", param.classLoader);
+        if (depth == null) {
+            XposedBridge.log("CleanLauncher: nie znaleziono DepthController");
+        } else {
+            XposedBridge.hookAllConstructors(depth, new XC_MethodHook() {
+                @Override
+                protected void afterHookedMethod(MethodHookParam hook) {
+                    try {
+                        int oldBlur = XposedHelpers.getIntField(
+                                hook.thisObject, "mMaxBlurRadius");
+                        XposedHelpers.setIntField(
+                                hook.thisObject, "mMaxBlurRadius", blur);
+                        XposedBridge.log("CleanLauncher blur: " + oldBlur + " -> " + blur);
+                    } catch (Throwable error) {
+                        XposedBridge.log("CleanLauncher blur error: " + error);
+                    }
+                }
+            });
+        }
+
         XposedHelpers.findAndHookMethod(View.class, "setVisibility", int.class,
                 new XC_MethodHook() {
                     @Override
