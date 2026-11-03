@@ -23,6 +23,19 @@ public class Hook implements IXposedHookLoadPackage {
     public void handleLoadPackage(XC_LoadPackage.LoadPackageParam param) {
         if (!"com.android.launcher3".equals(param.packageName)) return;
 
+                XposedHelpers.findAndHookMethod(View.class, "setBackgroundDrawable", Drawable.class,
+                new XC_MethodHook() {
+                    @Override
+                    protected void beforeHookedMethod(MethodHookParam hook) {
+                        if (!HOTSEAT.equals(hook.thisObject.getClass().getName())) return;
+                        if (hook.args[0] != null) {
+                            XposedBridge.log("CleanLauncher blocked background: "
+                                    + hook.args[0].getClass().getName());
+                            hook.args[0] = null;
+                        }
+                    }
+                });
+
                 final int blur = 60;
         Class<?> depth = XposedHelpers.findClassIfExists(
                 "com.android.launcher3.statehandlers.DepthController", param.classLoader);
